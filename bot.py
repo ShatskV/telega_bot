@@ -15,7 +15,6 @@ logging.basicConfig(filename='bot.log', format='%(asctime)s - %(message)s',
 
 def greet_user(update, context):
     print('Вызван /start')
-    logging.info("Пользователь отправил /start")
     update.message.reply_text('Привет, пользователь! Ты вызвал команду /start')
 
 def talk_to_me(update, context):
@@ -28,16 +27,14 @@ def constellation_planet(update, context):
     data = user_text.split()
     
     if len(data) == 2: # проверка на правильность запроса
-        print(data[1])
         try: 
             planet = getattr(ephem, data[1].capitalize())(datetime.today())
             constellation = ephem.constellation(planet)
-            print(constellation)
             constellation = f'{constellation[0]}, {constellation[1]}'
         except AttributeError: 
-            constellation = 'такого объекта нет'
+            constellation = 'Такого объекта нет!'
     else:
-        constellation = 'неправильный запрос'
+        constellation = 'Неверный запрос!'
     
     update.message.reply_text(constellation)
 
