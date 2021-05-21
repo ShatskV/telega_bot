@@ -28,11 +28,16 @@ def constellation_planet(update, context):
     
     if len(data) == 2: # проверка на правильность запроса
         try: 
-            planet = getattr(ephem, data[1].capitalize())(datetime.today())
+            planet_name = data[1].capitalize()
+            day_now = datetime.today()
+            planet = getattr(ephem, planet_name)(day_now)
             constellation = ephem.constellation(planet)
             constellation = f'{constellation[0]}, {constellation[1]}'
-        except AttributeError: 
-            constellation = 'Такого объекта нет!'
+            
+        except AttributeError: # getattr
+            constellation = 'Такого объекта нет!' 
+        except (ValueError, TypeError) as err: # ephem.constellation
+            constellation = f'функция созвездий неисправна! Ошибка: {err}'
     else:
         constellation = 'Неверный запрос!'
     
