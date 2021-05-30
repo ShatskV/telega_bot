@@ -127,6 +127,8 @@ def calculator(update, context):
                 answer ="На ноль делить нельзя!"
             except SyntaxError:
                 answer = "Ошибка в выражении для расчета!"
+    else:
+        answer = "операторы: + , - , * , / , // , % , sqrt , |..| или abs(..), ** "
     update.message.reply_text(answer)
     
 
