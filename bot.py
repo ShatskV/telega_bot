@@ -1,7 +1,7 @@
 import logging
 from emoji import emojize
 import ephem
-import math
+# import math
 import warnings
 from glob import glob
 from random import randint, choice
@@ -16,18 +16,15 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 logging.basicConfig(filename='bot.log', format='%(asctime)s - %(message)s', 
      datefmt='%d-%b-%y %H:%M:%S', level=logging.INFO)
 
-
 def check_for_calc(text_to_calc): #проверка строки для вычислений
     text_to_calc = text_to_calc.lower()
     text_to_calc = text_to_calc.replace('abs', '')
     text_to_calc = text_to_calc.replace('sqrt', '')
-    alphabet=set('12345678910/%*+-().|')
-    for let in text_to_calc:
-        if alphabet.isdisjoint(let.lower()):
-            return False
-    if text_to_calc.count('|') % 2 == 1:
+    if text_to_calc.count('|') % 2 == 1: #проверка на модуль числа, он должен быть закрыт
         return False
-    return True
+    alphabet=set('12345678910/%*+-().|')
+    text_to_calc = set(text_to_calc)
+    return alphabet.issuperset(text_to_calc)
            
        
 def get_smile(user_data):
@@ -71,14 +68,15 @@ def game_city(update, context):
     if not context.args:
         message ="Сыграем в города?\nОтправь \"/cities название_города_на_русском\"\n"\
                     "/cities new - Сброс игры"
-        update.message.reply_text(message)
     else:
-        if context.args[0] == 0:
-            pass
+        if context.args[0] == "new":
+            if 'list_cities' in context.user_data:
+                del context.user_data['list_cities']
         else:    
-            pass        
-        city = ' '.join(context.args)
-        print(city)
+            city = ' '.join(context.args)
+            print(city)
+
+    update.message.reply_text(message)
         # find_city(city, context.user_data)
 
          
@@ -111,7 +109,6 @@ def calculator(update, context):
         expression = expression.replace(' ','')
         expression = expression.lower().replace(',','.')
         
-
         if check_for_calc(expression):
             expression = expression.replace('sqrt','math.sqrt')
             while expression.count('|') > 0: #заменим |..| на abs(..)
@@ -122,13 +119,17 @@ def calculator(update, context):
                 pos = expression.find('|')
                 expression = expression[:pos] + ch + expression[pos+1:] 
             try:
-                answer = eval(expression)
+                answer =str(eval(expression))
             except ZeroDivisionError:
-                answer ="На ноль делить нельзя!"
+                answer = "На ноль делить нельзя!"
             except SyntaxError:
                 answer = "Ошибка в выражении для расчета!"
+            except (ValueError, TypeError):
+                answer = "Нельзя извлечь корень/возводить в степень меньше 1 если число отрицательное!"
+            finally:
+                print(answer)
     else:
-        answer = "операторы: + , - , * , / , // , % , sqrt , |..| или abs(..), ** "
+        answer = "операторы: + , - , * , / , // , % , ** , sqrt , |..| или abs(..) "
     update.message.reply_text(answer)
     
 
@@ -165,9 +166,9 @@ def main():
     dp.add_handler(CommandHandler("planet", constellation_planet))
     dp.add_handler(CommandHandler("cat", send_cat_picture))
     dp.add_handler(MessageHandler(Filters.text, talk_to_me))
-    
+    # Cities = settings.CITIES
     logging.info("Бот стартовал")
-
+    print(settings.CITIES.keys())
     mybot.start_polling()
 
     mybot.idle()
