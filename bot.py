@@ -68,8 +68,6 @@ def talk_to_me(update, context):
 class Citys_work():
     
     def __init__(self,city, user_list):
-        # city = city.capitalize()
-        # self.city = city.replace('-',' ')
         self.city =  Citys_work.format_town(city)
         self.user_list = user_list
     
@@ -94,17 +92,14 @@ class Citys_work():
             return True
         return False
 
-    def check_city_in_list(self):
+    def check_city_in_list(self): 
         letter = self.city[0]
         if 'letter' in self.user_list and self.user_list['letter'] != letter:
             let = self.user_list['letter']
-            # print(f'letter of city: {letter} letter must be: {let}') #!
             return 1 # город не с той буквы 
 
         if letter in self.user_list:
             for word in self.user_list[letter]: 
-                # word = word.capitalize()
-                # word = word.replace('-',' ')
                 word = Citys_work.format_town(word)                
                 if word == self.city:
                     return 2 # город уже был
@@ -113,8 +108,6 @@ class Citys_work():
             print(f'Letter in CITIES = {letter}')
             for i in range(len(settings.CITIES[letter])):
                 word = settings.CITIES[letter][i]
-                # word = word.replace('-',' ')
-                # word = word.capitalize()
                 word = Citys_work.format_town(word)   
                 if word == self.city:
                     if letter not in self.user_list:
@@ -125,14 +118,10 @@ class Citys_work():
     
     def find_city(self):
         letter = Citys_work.check_last_letter(self.city)
-        # if self.city[-1] in ('ьы'):
-        #     letter = self.city[-2].capitalize()
-        # else:
-        #     letter = self.city[-1].capitalize()
         if letter in settings.CITIES:
             if letter in self.user_list:
                 list_to_choose = list( set(settings.CITIES[letter])-set(self.user_list[letter]))
-                if list_to_choose ==[]:
+                if list_to_choose == []:
                     return 0 # победа пользователя
             else:
                 list_to_choose = settings.CITIES[letter]   
@@ -142,22 +131,16 @@ class Citys_work():
                         self.user_list[letter] = []
         self.user_list[letter].append(city_from_bot)
         self.user_list['letter'] = Citys_work.check_last_letter(city_from_bot)
-        # if city_from_bot[-1] in ('ьы'):
-        #     self.user_list['letter'] = city_from_bot[-2].capitalize()
-        # else: 
-        #     self.user_list['letter'] = city_from_bot[-1].capitalize()
-        # letter = self.user_list['letter']
-        # print(f'city_bot: {city_from_bot}, {letter}')
         return city_from_bot
 
 
 def get_city(city, user_list):
-    # message = "111"
     game = Citys_work(city,user_list)
     if game.check_city():
         status_check = game.check_city_in_list() 
         if not status_check:
             result = game.find_city()
+            
             if not result:
                 message = "Поздравляю, ты выиграл! Я не знаю больше городов"
                 game.user_list = {}
@@ -168,9 +151,9 @@ def get_city(city, user_list):
                     if len(settings.CITIES[letter]) == len(game.user_list[letter]):
                         message = f"{result} ! Вы проиграли! Больше городов на букву \"{letter}\" нет!"
                         game.user_list = {}
+                        
         elif status_check == 1: 
             message = "Город не с той буквы!"
-            # print(f'check = {check}')
         elif status_check == 2:
             message = "Город уже был!"
         elif status_check == 3:           
@@ -285,6 +268,7 @@ def constellation_planet(update, context):
 def main():
     mybot = Updater(settings.API_KEY, use_context=True)
     dp = mybot.dispatcher
+
     dp.add_handler(CommandHandler("start", greet_user))
     dp.add_handler(CommandHandler("calc", calculator))
     dp.add_handler(CommandHandler("guess", guess_number))
@@ -292,6 +276,7 @@ def main():
     dp.add_handler(CommandHandler("planet", constellation_planet))
     dp.add_handler(CommandHandler("cat", send_cat_picture))
     dp.add_handler(MessageHandler(Filters.text, talk_to_me))
+    
     logging.info("Бот стартовал")
     mybot.start_polling()
 
