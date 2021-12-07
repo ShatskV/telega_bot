@@ -2,7 +2,7 @@ from collections import UserList
 import logging
 from emoji import emojize
 import ephem
-import math
+import math # нужно для eval
 import warnings
 from glob import glob
 from random import randint, choice
@@ -10,9 +10,11 @@ from datetime import datetime
 from typing import Text
 import settings
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram import ReplyKeyboardMarkup, KeyboardButton
 
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
 #убрать предупреждения об устаревшем коде
+
 
 logging.basicConfig(filename='bot.log', format='%(asctime)s - %(message)s', 
      datefmt='%d-%b-%y %H:%M:%S', level=logging.INFO)
@@ -22,7 +24,7 @@ def check_for_calc(text_to_calc): #проверка строки для вычи
     text_to_calc = text_to_calc.lower()
     text_to_calc = text_to_calc.replace('abs', '')
     text_to_calc = text_to_calc.replace('sqrt', '')
-    if text_to_calc.count('|') % 2 == 1: #проверка на модуль числа, он должен быть закрыт
+    if text_to_calc.count('|') % 2 == 1: # проверка на модуль числа, он должен быть закрыт
         return False
     alphabet=set('12345678910/%*+-().|')
     text_to_calc = set(text_to_calc)
@@ -50,19 +52,22 @@ def play_random_numbers(user_number):
 def greet_user(update, context):
     print('Вызван /start')
     context.user_data['emoji'] = get_smile(context.user_data)
+
     update.message.reply_text(f"Привет, пользователь {context.user_data['emoji']}!\nТы вызвал команду /start\n"
                                 '/planet имя_паланеты_латиницей - определение созвездия\n'
                                 '/calc _выражение_ - калькулятор\n'
                                 '/guess целое_число - игра с числами\n'
-                                '/cat - высылаем котика Урмаса\n')
-
+                                '/cat - высылаем котика Урмаса\n', 
+                             reply_markup = main_keyboard()
+                             )
+    
 
 def talk_to_me(update, context):
     user_text = update.message.text 
     smile = get_smile(context.user_data)
     username = update.effective_user.first_name
     print(user_text)
-    update.message.reply_text(f"Здравствуй, {username} {smile}! Ты написал: {user_text}")
+    update.message.reply_text(f"Здравствуй, {username} {smile}! Ты написал: {user_text}", reply_markup = main_keyboard())
 
 
 class Citys_work():
@@ -185,7 +190,7 @@ def game_city(update, context):
         else: 
             message ="База городов пустая, игра невозможна!"
 
-    update.message.reply_text(message)
+    update.message.reply_text(message, reply_markup = main_keyboard())
 
          
 def guess_number(update, context):
@@ -197,14 +202,14 @@ def guess_number(update, context):
             message = "Введите целое число"
     else:
         message = "Введите целое число"
-    update.message.reply_text(message)
+    update.message.reply_text(message, reply_markup = main_keyboard())
 
 
 def send_cat_picture(update, context):
     cat_photos_list = glob('images/cat*.jp*g')
     cat_pic_filename = choice(cat_photos_list)
     chat_id = update.effective_chat.id
-    context.bot.send_photo(chat_id=chat_id, photo=open(cat_pic_filename, 'rb'))
+    context.bot.send_photo(chat_id=chat_id, photo=open(cat_pic_filename, 'rb'), reply_markup = main_keyboard())
 
 
 def calculator(update, context): 
@@ -219,7 +224,7 @@ def calculator(update, context):
         
         if check_for_calc(expression):
             expression = expression.replace('sqrt','math.sqrt')
-            while expression.count('|') > 0: #заменим |..| на abs(..)
+            while expression.count('|') > 0: # заменим |..| на abs(..)
                 if expression.count('|')%2 == 0:
                     ch = 'abs('
                 else:
@@ -227,7 +232,7 @@ def calculator(update, context):
                 pos = expression.find('|')
                 expression = expression[:pos] + ch + expression[pos+1:] 
             try:
-                answer =(eval(expression))
+                answer = eval(expression)
                 if isinstance(answer, complex):
                     answer = f"Решения в вещественных числах нет! Комплексное: {answer}"
             except ZeroDivisionError:
@@ -240,7 +245,7 @@ def calculator(update, context):
                 print(answer)
     else:
         answer = "операторы: + , - , * , / , // , % , ** , sqrt , |..| или abs(..) "
-    update.message.reply_text(answer)
+    update.message.reply_text(answer, reply_markup = main_keyboard())
     
 
 def constellation_planet(update, context):
@@ -262,8 +267,20 @@ def constellation_planet(update, context):
     else:
         constellation = 'Неверный запрос!'
     
-    update.message.reply_text(constellation)
+    update.message.reply_text(constellation, reply_markup = main_keyboard())
     
+
+def user_coordinates(update, context):
+    context.user_data['emoji'] = get_smile(context.user_data)
+    coords = update.message.location
+    update.message.reply_text (
+        f"Ваши координаты {coords} {context.user_data['emoji']}!",
+        reply_markup = main_keyboard()
+    )
+
+def main_keyboard():
+    return ReplyKeyboardMarkup([['Прислать котика', KeyboardButton('Мои координаты', request_location=True)]], resize_keyboard=True)
+
 
 def main():
     mybot = Updater(settings.API_KEY, use_context=True)
@@ -275,10 +292,14 @@ def main():
     dp.add_handler(CommandHandler("cities", game_city))
     dp.add_handler(CommandHandler("planet", constellation_planet))
     dp.add_handler(CommandHandler("cat", send_cat_picture))
+    dp.add_handler(MessageHandler(Filters.regex('^(Прислать котика)$'), send_cat_picture))
+    dp.add_handler(MessageHandler(Filters.location, user_coordinates))
     dp.add_handler(MessageHandler(Filters.text, talk_to_me))
+
     
     logging.info("Бот стартовал")
     mybot.start_polling()
+    print('Bot started!')
 
     mybot.idle()
 
