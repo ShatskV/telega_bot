@@ -9,3 +9,4 @@ six==1.16.0
 tornado==6.1
 tzlocal==2.1
 python-dotenv==0.19.1
+clarifai-grpc==7.11.0
